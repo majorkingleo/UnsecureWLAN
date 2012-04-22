@@ -9,21 +9,15 @@ import at.redeye.FrameWork.base.bindtypes.DBInteger;
 import at.redeye.FrameWork.base.prm.impl.gui.LocalConfig;
 import at.redeye.FrameWork.base.tablemanipulator.TableManipulator;
 import at.redeye.Plugins.ShellExec.ShellExec;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import javax.swing.ButtonGroup;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JRadioButtonMenuItem;
 import org.apache.log4j.PatternLayout;
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapIf;
 import org.jnetpcap.packet.PcapPacket;
-import sun.misc.OSEnvironment;
 
 /**
  *
@@ -113,10 +107,12 @@ public class MainWin extends BaseDialog {
             iface.iface.loadFromString(DeviceListener.getName(device));                                   
             
             interfaces.add(iface);
-            
+            /*
             DeviceListener listener = new DeviceListener(device, this);
             listener.start();
             listeners.add(listener);
+             * 
+             */
         }
         
         tm.addAll(interfaces);

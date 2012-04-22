@@ -4,11 +4,14 @@
  */
 package at.redeye.UnsecureWLAN;
 
+import at.redeye.FrameWork.base.Setup;
 import java.io.IOException;
 import java.net.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.log4j.Logger;
 import org.jnetpcap.Pcap;
+import org.jnetpcap.PcapAddr;
 import org.jnetpcap.PcapIf;
 import org.jnetpcap.packet.PcapPacket;
 import org.jnetpcap.packet.PcapPacketHandler;
@@ -275,7 +278,29 @@ public class DeviceListener extends Thread
     public static String getName(PcapIf device ) {
         
         String descr = device.getDescription();
-        descr += " " + device.getAddresses().get(0).getAddr().toString();
+        
+        if( Setup.is_linux_system() )
+            descr = device.getName();
+        
+        if( descr == null )
+            descr = "";
+        
+        List<PcapAddr> addresses = device.getAddresses();
+        
+        int size = addresses.size();
+        
+        String better_descr = null;
+        
+        for( PcapAddr addr :  addresses )
+        {           
+            if(  addr.getAddr().getFamily() == 2 )
+                better_descr = addr.getAddr().toString();
+            
+            logger.debug(addr.getAddr().toString() + " " +  addr.getAddr().getFamily());
+        }
+        
+        if( better_descr != null )
+            descr += " " + better_descr;
         
         return descr;
     }
