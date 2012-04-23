@@ -107,12 +107,15 @@ public class MainWin extends BaseDialog {
             iface.iface.loadFromString(DeviceListener.getName(device));                                   
             
             interfaces.add(iface);
-            /*
-            DeviceListener listener = new DeviceListener(device, this);
-            listener.start();
-            listeners.add(listener);
-             * 
-             */
+            
+            if( iface.iface.toString().contains("wlan") ) {     
+                iface.listen.loadFromString("JA");
+                DeviceListener listener = new DeviceListener(device, this);
+                listener.start();
+                listeners.add(listener);
+                break;
+            }
+
         }
         
         tm.addAll(interfaces);
@@ -137,46 +140,7 @@ public class MainWin extends BaseDialog {
 
         super.close();
     }
-    
-    void sendToOther( Thread me, PcapPacket packet ) {
-        for( int i = 0; i < listeners.size(); i++ ) {
-            if( listeners.get(i) != me  ) {
-                
-    //           if( !listeners.get(i).device.getDescription().contains("Microsoft") ) 
-                    listeners.get(i).send(packet);                              
-            } else {
-               DBInteger in =  interfaces.get(i).recv;
-               in.loadFromCopy(in.getValue()+1);
-            }
-        }
-        
-        java.awt.EventQueue.invokeLater(new Runnable() {
-
-            @Override
-            public void run() {
-                tm.updateUI();
-            }        
-        });
-    }        
-    
-    void incSent( Thread me ) {
-        for( int i = 0; i < listeners.size(); i++ ) {
-            if( listeners.get(i) == me  ) {
-               DBInteger in =  interfaces.get(i).sent;
-               in.loadFromCopy(in.getValue()+1);
-               break;
-            }
-        }
-        
-       java.awt.EventQueue.invokeLater(new Runnable() {
-
-            @Override
-            public void run() {
-                tm.updateUI();
-            }        
-        });        
-    }
-    
+  
     
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
