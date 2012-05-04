@@ -5,6 +5,7 @@
 package at.redeye.UnsecureWLAN;
 
 import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.HashMap;
 import org.apache.log4j.Logger;
 import org.jnetpcap.protocol.network.Ip4;
@@ -18,11 +19,11 @@ public class StreamHandler {
     
     private static final Logger logger = Logger.getLogger(StreamHandler.class);
     
-    HashMap<String,StreamEntry> entries = new HashMap();    
+    final HashMap<String,StreamEntry> entries = new HashMap();    
     
     public StreamHandler()
     {
-        entries = new HashMap();    
+       
     }
     
     public boolean wantPacket( Ip4 ip4, Tcp tcp )
@@ -30,17 +31,28 @@ public class StreamHandler {
        return false;
     }
     
-    public void eatPacket( Ip4 ip4, Tcp tcp ) throws UnknownHostException
+    public StreamEntry eatPacket( Ip4 ip4, Tcp tcp ) throws UnknownHostException
     {
         StreamEntry entry = new StreamEntry(ip4, tcp);
-        
-        
-        StreamEntry existing = entries.get(entry.toString());
-        
-        if( existing == null )
-            entries.put(entry.toString(),entry);
-        else
-            existing.append(entry);
-       
+                
+        synchronized (entries) {
+
+            StreamEntry existing = entries.get(entry.toString());
+
+            if (existing == null) {
+                entries.put(entry.toString(), entry);
+                return entry;
+            } else {
+                existing.append(entry);
+                return existing;
+            }
+        }
     }
+    
+     Collection<StreamEntry> getEntries()
+     {
+         synchronized(entries) {
+            return entries.values();
+        }
+     }
 }

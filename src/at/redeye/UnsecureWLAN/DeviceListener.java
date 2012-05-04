@@ -30,12 +30,15 @@ public class DeviceListener extends Thread
     Pcap pcap;
     MainWin mainwin;
     HTTPHandler handler = new HTTPHandler();
+    private final PacketAnalyzer analyzer;
     
     public DeviceListener(PcapIf device, final MainWin mainwin) {
         super(getName(device));
 
         this.mainwin = mainwin;
         this.device = device;
+        
+        analyzer = new PacketAnalyzer(handler);      
         
        final Thread sender = this;
 
@@ -123,6 +126,8 @@ public class DeviceListener extends Thread
             return;
         } 
         
+        analyzer.start();
+        
         while( !do_stop ) {            
             
             try {
@@ -141,6 +146,7 @@ public class DeviceListener extends Thread
     void doStop()
     {
         do_stop = true;
+        analyzer.doStop();
         pcap.breakloop();        
     }
     

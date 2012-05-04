@@ -46,10 +46,19 @@ public class StreamEntry {
 
     public void append(StreamEntry entry) 
     {
-        ByteBuffer tmp_buffer = ByteBuffer.allocate(buffer.capacity() + entry.buffer.capacity());
-        tmp_buffer.put(buffer);
-        tmp_buffer.put(entry.buffer);
-        buffer = tmp_buffer;
-        logger.debug(connectionId + " " + String.valueOf(buffer.capacity()));
+        synchronized (this) {
+            ByteBuffer tmp_buffer = ByteBuffer.allocate(buffer.capacity() + entry.buffer.capacity());
+            tmp_buffer.put(buffer);
+            tmp_buffer.put(entry.buffer);
+            buffer = tmp_buffer;
+            logger.debug(connectionId + " " + String.valueOf(buffer.capacity()));
+        }
+    }
+    
+    public byte[] getByteArray()
+    {
+        synchronized( this ) {
+            return buffer.array();
+        }
     }
 }
