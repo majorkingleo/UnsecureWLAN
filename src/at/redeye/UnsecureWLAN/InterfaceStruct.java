@@ -16,6 +16,7 @@ import at.redeye.FrameWork.base.bindtypes.DBStrukt;
 public class InterfaceStruct extends DBStrukt {
 
     DBString iface = new DBString("iface","Interface",25);
+    DBString dev_name = new DBString( "dev_name", "Device Name", 25 );
     DBInteger sent = new DBInteger("sent","Gesendet");
     DBInteger recv = new DBInteger("rec","Empfangen");    
     DBFlagJaNein listen = new DBFlagJaNein("listen","Abhören");
@@ -25,6 +26,7 @@ public class InterfaceStruct extends DBStrukt {
         super("InterfaceStruct");
         
         add(iface);
+        add(dev_name);
         add(listen);
         add(sent);
         add(recv);

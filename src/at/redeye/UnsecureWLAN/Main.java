@@ -21,7 +21,7 @@ public class Main extends BaseModuleLauncher
         root  = new LocalRoot("UnsecWLAN", "Unsecure WLAN", false, false);
         
         root.setBaseLanguage("de");
-        root.setDefaultLanguage("en");               
+        root.setDefaultLanguage("en");       
     }
 
     public void run() {

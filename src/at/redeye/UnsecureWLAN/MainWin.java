@@ -4,20 +4,25 @@
  */
 package at.redeye.UnsecureWLAN;
 
-import at.redeye.FrameWork.base.*;
-import at.redeye.FrameWork.base.bindtypes.DBInteger;
+import at.redeye.FrameWork.base.BaseDialog;
+import at.redeye.FrameWork.base.BaseModuleLauncher;
+import at.redeye.FrameWork.base.Root;
+import at.redeye.FrameWork.base.Setup;
 import at.redeye.FrameWork.base.prm.impl.gui.LocalConfig;
 import at.redeye.FrameWork.base.tablemanipulator.TableManipulator;
 import at.redeye.Plugins.ShellExec.ShellExec;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import javax.swing.ButtonGroup;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JRadioButtonMenuItem;
 import org.apache.log4j.PatternLayout;
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapIf;
-import org.jnetpcap.packet.PcapPacket;
 
 /**
  *
@@ -50,10 +55,7 @@ public class MainWin extends BaseDialog {
         appender.setTextArea(jTextArea1);
         
         BaseModuleLauncher.logger.addAppender( appender  );
-        
-        tm = new TableManipulator(root,jTable1, new InterfaceStruct());
-       
-        tm.prepareTable();               
+                
         
         java.awt.EventQueue.invokeLater(new Runnable() {
 
@@ -65,11 +67,17 @@ public class MainWin extends BaseDialog {
                 } catch( UnsatisfiedLinkError ex ) {
                     if( ex.toString().contains("dependent") || ex.toString().contains("jnetpcap")) {
                         logger.error(ex,ex);
-                        JOptionPane.showMessageDialog(rootPane, "Please Install the WinPcap Library http://www.winpcap.org/install/default.htm");
-                        ShellExec exec = new ShellExec();
                         
-                        if( Setup.is_win_system() )
+                        if( Setup.is_linux_system() ) {
+                            JOptionPane.showMessageDialog(rootPane, "Pleasy copy libjnetpcap.so from ext resources to you library path and restart this app" );
+                        } else if( Setup.is_win_system() ) {
+                            JOptionPane.showMessageDialog(rootPane, "Please Install the WinPcap Library http://www.winpcap.org/install/default.htm");
+                        } 
+                                                                       
+                        if( Setup.is_win_system() ) {
+                         ShellExec exec = new ShellExec();
                          exec.execute("http://www.winpcap.org/install/default.htm");
+                        }
                     } else {
                         logger.error(ex,ex);
                     }
@@ -80,10 +88,10 @@ public class MainWin extends BaseDialog {
         ButtonGroup bgroup  = new ButtonGroup();                  
           
     }
-
+    
     void initDeviceList()
     {
-        interfaces = new ArrayList();
+        interfaces = new ArrayList<InterfaceStruct>();
         listeners = new Vector();
         
         int r = Pcap.findAllDevs(alldevs, errbuf);  
@@ -93,8 +101,8 @@ public class MainWin extends BaseDialog {
             return;  
         }  
   
-        logger.debug("Network devices found:");  
-  
+        logger.debug("Network devices found:");            
+        
         int i = 0;  
         for (PcapIf device : alldevs) {  
             String description =  
@@ -105,9 +113,10 @@ public class MainWin extends BaseDialog {
             
             InterfaceStruct iface = new InterfaceStruct();
             iface.iface.loadFromString(DeviceListener.getName(device));                                   
+            iface.dev_name.loadFromString(device.getName());
             
             interfaces.add(iface);
-            
+/*            
             if( iface.iface.toString().contains("wlan") ) {     
                 iface.listen.loadFromString("JA");
                 DeviceListener listener = new DeviceListener(device, this);
@@ -115,15 +124,67 @@ public class MainWin extends BaseDialog {
                 listeners.add(listener);
                 break;
             }
-
+*/           
         }
+               
         
-        tm.addAll(interfaces);
-        tm.autoResize();
+        ButtonGroup bgroup  = new ButtonGroup();
+        
+        String last_dev_name = root.getSetup().getLocalConfig("listendevice",null);
+        
+        // create jmenu items
+        for( InterfaceStruct iface :  interfaces) {
+           
+            JMenuItem miface = new JRadioButtonMenuItem(iface.iface.getValue());
+            
+            if( last_dev_name != null ) {
+                if( last_dev_name.equals(iface.dev_name.getValue())) {
+                    miface.setSelected(true);
+                }
+            }
+            
+            bgroup.add(miface);
+            
+            final InterfaceStruct my_iface = iface;
+            
+            miface.addActionListener(new ActionListener() {
+
+                public void actionPerformed(ActionEvent e) {
+                    chooseInterface(my_iface);
+                }
+            });
+            
+            jMInterface.add(miface);            
+        }
+                        
+        
+        if( last_dev_name != null ) {
+            InterfaceStruct iface = new InterfaceStruct();
+            iface.dev_name.loadFromString(last_dev_name);
+            chooseInterface(iface);
+        }
     }
     
-    @Override
-    public void close() {
+    public void chooseInterface(InterfaceStruct networkinterface)
+    {
+        stoppAllDevices();
+        
+        for( PcapIf device : alldevs ) {            
+            for( InterfaceStruct iface :  interfaces ) {
+                if( iface.dev_name.getValue().equals(networkinterface.dev_name.getValue())) {
+                    DeviceListener listener = new DeviceListener(device, this);
+                    listener.start();
+                    listeners.add(listener);
+                    logger.debug("listen on device " + networkinterface.dev_name.getValue());
+                    root.getSetup().setLocalConfig("listendevice", networkinterface.dev_name.getValue());
+                    return;
+                } // if
+            } // for  
+        } // for
+    }
+    
+    public void stoppAllDevices()
+    {
         for (DeviceListener listener : listeners) {
             listener.doStop();
         }
@@ -135,8 +196,16 @@ public class MainWin extends BaseDialog {
             }
         }
 
+        listeners.clear();                
+    }
+    
+    @Override
+    public void close() {
+
+        stoppAllDevices();
+        
         listeners = null;
-        interfaces = null;
+        interfaces = null;        
 
         super.close();
     }
@@ -146,9 +215,6 @@ public class MainWin extends BaseDialog {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jSplitPane1 = new javax.swing.JSplitPane();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new javax.swing.JTable();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
         jMenuBar1 = new javax.swing.JMenuBar();
@@ -156,35 +222,16 @@ public class MainWin extends BaseDialog {
         jMSettings = new javax.swing.JMenuItem();
         jSeparator2 = new javax.swing.JPopupMenu.Separator();
         jMenuItem1 = new javax.swing.JMenuItem();
+        jMInterface = new javax.swing.JMenu();
         jMenu2 = new javax.swing.JMenu();
         jMAbout = new javax.swing.JMenuItem();
         jMChangeLog = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
-        jSplitPane1.setDividerLocation(200);
-        jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
-
-        jTable1.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
-            },
-            new String [] {
-                "Title 1", "Title 2", "Title 3", "Title 4"
-            }
-        ));
-        jScrollPane1.setViewportView(jTable1);
-
-        jSplitPane1.setLeftComponent(jScrollPane1);
-
         jTextArea1.setColumns(20);
         jTextArea1.setRows(5);
         jScrollPane2.setViewportView(jTextArea1);
-
-        jSplitPane1.setRightComponent(jScrollPane2);
 
         jMenu1.setText("Programm");
 
@@ -206,6 +253,9 @@ public class MainWin extends BaseDialog {
         jMenu1.add(jMenuItem1);
 
         jMenuBar1.add(jMenu1);
+
+        jMInterface.setText("Interface");
+        jMenuBar1.add(jMInterface);
 
         jMenu2.setText("Info");
 
@@ -234,11 +284,14 @@ public class MainWin extends BaseDialog {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE)
+            .addGroup(layout.createSequentialGroup()
+                .addGap(1, 1, 1)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 426, Short.MAX_VALUE)
+                .addGap(1, 1, 1))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 322, Short.MAX_VALUE)
+            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 322, Short.MAX_VALUE)
         );
 
         pack();
@@ -266,16 +319,14 @@ public class MainWin extends BaseDialog {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem jMAbout;
     private javax.swing.JMenuItem jMChangeLog;
+    private javax.swing.JMenu jMInterface;
     private javax.swing.JMenuItem jMSettings;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JPopupMenu.Separator jSeparator2;
-    private javax.swing.JSplitPane jSplitPane1;
-    private javax.swing.JTable jTable1;
     private javax.swing.JTextArea jTextArea1;
     // End of variables declaration//GEN-END:variables
 }
