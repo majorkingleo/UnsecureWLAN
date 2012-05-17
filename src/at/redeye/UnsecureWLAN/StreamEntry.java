@@ -21,8 +21,17 @@ public class StreamEntry extends StreamEntryWithoutContent {
     {
         super(ipv4,tcp);
         
-        byte bytes[] = tcp.getByteArray(0, tcp.size());
-        buffer = ByteBuffer.wrap(bytes);
+        byte bytes[] = tcp.getPayload();
+        /*
+        if( bytes.length == 0)  {               
+            logger.debug("lenght: " + tcp.getLength() + " offset: " + tcp.getPayloadOffset());                        
+            bytes = tcp.getByteArray(0,tcp.getLength());
+            logger.debug("ok");                                  
+        }*/
+        
+        if( bytes.length > 0 ) {
+            buffer = ByteBuffer.wrap(bytes);
+        } 
     }
         
     public void append(StreamEntry entry) 
@@ -41,6 +50,9 @@ public class StreamEntry extends StreamEntryWithoutContent {
     public byte[] getByteArray()
     {
         synchronized( this ) {
+            if( buffer == null )
+                return null;
+            
             return buffer.array();
         }
     }

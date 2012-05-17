@@ -76,7 +76,7 @@ public class DeviceListener extends Thread
                                     handler.eatPacket(ipv4, tcp);
                                 }
                             } catch (Exception ex) {
-                                logger.debug(ex);
+                                logger.debug(ex,ex);
                             }
                         } // for
                     }

@@ -4,16 +4,15 @@
  */
 package at.redeye.UnsecureWLAN;
 
-import at.redeye.FrameWork.base.BaseDialog;
-import at.redeye.FrameWork.base.BaseModuleLauncher;
-import at.redeye.FrameWork.base.Root;
-import at.redeye.FrameWork.base.Setup;
+import at.redeye.FrameWork.base.*;
 import at.redeye.FrameWork.base.prm.impl.gui.LocalConfig;
 import at.redeye.FrameWork.base.tablemanipulator.TableManipulator;
 import at.redeye.Plugins.ShellExec.ShellExec;
+import at.redeye.UnsecureWLAN.views.browser.BrowserView;
 import at.redeye.UnsecureWLAN.views.connections.ConnectionsView;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -241,6 +240,7 @@ public class MainWin extends BaseDialog {
         jMInterface = new javax.swing.JMenu();
         jMenu3 = new javax.swing.JMenu();
         jMConnectionsView = new javax.swing.JMenuItem();
+        jMBrowse = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         jMAbout = new javax.swing.JMenuItem();
         jMChangeLog = new javax.swing.JMenuItem();
@@ -286,6 +286,14 @@ public class MainWin extends BaseDialog {
             }
         });
         jMenu3.add(jMConnectionsView);
+
+        jMBrowse.setText("Browser");
+        jMBrowse.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMBrowseActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jMBrowse);
 
         jMenuBar1.add(jMenu3);
 
@@ -351,9 +359,14 @@ public class MainWin extends BaseDialog {
     private void jMConnectionsViewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMConnectionsViewActionPerformed
         invokeDialogUnique(new ConnectionsView(root, this));
     }//GEN-LAST:event_jMConnectionsViewActionPerformed
+
+    private void jMBrowseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMBrowseActionPerformed
+         invokeDialogUnique(new BrowserView(root, this));
+    }//GEN-LAST:event_jMBrowseActionPerformed
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem jMAbout;
+    private javax.swing.JMenuItem jMBrowse;
     private javax.swing.JMenuItem jMChangeLog;
     private javax.swing.JMenuItem jMConnectionsView;
     private javax.swing.JMenu jMInterface;
@@ -386,4 +399,41 @@ public class MainWin extends BaseDialog {
             }        
         }
     }
+
+    public void tryOpenUrl(final String url) {
+        new AutoMBox(BrowserView.class.getName()) {
+
+            @Override
+            public void do_stuff() throws Exception {
+                openUrl(url);
+            }
+        };
+    }
+    
+    public void openUrl(String url) throws IOException {
+        if (Setup.is_win_system()) {
+            ShellExec exec = new ShellExec();
+            exec.execute("http://www.winpcap.org/install/default.htm");
+        } else {
+            String open_command = getOpenCommand();
+
+            String command = open_command + " \"" + url + "\"";
+            logger.info(command);
+
+            String command_array[] = new String[2];
+
+            command_array[0] = open_command;
+            command_array[1] = url;
+
+            Process p = Runtime.getRuntime().exec(command_array);
+        }
+    }
+    
+    private String getOpenCommand()
+    {
+        if( Setup.is_win_system() )
+            return "explorer";
+
+        return root.getSetup().getLocalConfig(FrameWorkConfigDefinitions.OpenCommand);
+    }    
 }
