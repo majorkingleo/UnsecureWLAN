@@ -5,7 +5,6 @@
 package at.redeye.UnsecureWLAN;
 
 import java.net.UnknownHostException;
-import java.util.Collection;
 import java.util.HashMap;
 import org.apache.log4j.Logger;
 import org.jnetpcap.protocol.network.Ip4;
@@ -19,11 +18,11 @@ public class StreamHandler {
     
     private static final Logger logger = Logger.getLogger(StreamHandler.class);
     
-    final HashMap<String,StreamEntry> entries = new HashMap();    
+    final HashMap<String,StreamEntryWithoutContent> entries = new HashMap<String,StreamEntryWithoutContent>();    
+
     
     public StreamHandler()
     {
-       
     }
     
     public boolean wantPacket( Ip4 ip4, Tcp tcp )
@@ -31,28 +30,63 @@ public class StreamHandler {
        return false;
     }
     
-    public StreamEntry eatPacket( Ip4 ip4, Tcp tcp ) throws UnknownHostException
+    public StreamEntryWithoutContent eatPacket( Ip4 ip4, Tcp tcp ) throws UnknownHostException
     {
-        StreamEntry entry = new StreamEntry(ip4, tcp);
-                
-        synchronized (entries) {
-
-            StreamEntry existing = entries.get(entry.toString());
-
-            if (existing == null) {
-                entries.put(entry.toString(), entry);
+        StreamEntry entry = new StreamEntry(ip4, tcp);        
+        
+        synchronized( entries )
+        {
+            StreamEntryWithoutContent existing = entries.get(entry.toString());
+        
+            if( existing == null ) {
+                entries.put(entry.toString(),entry);
                 return entry;
             } else {
                 existing.append(entry);
                 return existing;
-            }
-        }
+            }                        
+        }               
+    }
+
+    
+    public StreamEntryWithoutContent get( String connectionId ) {
+        return entries.get(connectionId);
     }
     
-     Collection<StreamEntry> getEntries()
-     {
-         synchronized(entries) {
-            return entries.values();
+    public void put( String connectionId, StreamEntryWithoutContent entry ) {
+        entries.put(connectionId, entry);
+    }
+    
+    /**          
+     * @return a copy of the internal hash map
+     * Die StreamEntry an sich werde trotzdem noch immer befüllt.
+     * Als die append() Methode wird nach wie vor aufgerufen.
+     */
+    public HashMap<String,StreamEntryWithoutContent>  getEntries()
+    {
+        HashMap<String,StreamEntryWithoutContent> res = new HashMap();
+        
+        synchronized( entries ) {
+            res.putAll(entries);
         }
-     }
+        
+        return res;
+    }
+    
+    /**          
+     * @return a copy of the internal hash map
+     * Die Interne Hashmap wird dabei geleert.
+     */    
+    public HashMap<String,StreamEntryWithoutContent>  getEntriesAndClear()
+    {
+        HashMap<String,StreamEntryWithoutContent> res = new HashMap();
+        
+        synchronized( entries ) {
+            res.putAll(entries);
+            entries.clear();
+        }
+        
+        return res;
+    }    
+
 }

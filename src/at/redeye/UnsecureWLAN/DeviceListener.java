@@ -5,6 +5,7 @@
 package at.redeye.UnsecureWLAN;
 
 import at.redeye.FrameWork.base.Setup;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.log4j.Logger;
 import org.jnetpcap.Pcap;
@@ -29,8 +30,7 @@ public class DeviceListener extends Thread
     boolean do_stop = false;
     Pcap pcap;
     MainWin mainwin;
-    HTTPHandler handler = new HTTPHandler();
-    private final PacketAnalyzer analyzer;
+    final ArrayList<StreamHandler> handlers = new ArrayList<StreamHandler>();    
     
     public DeviceListener(PcapIf device, final MainWin mainwin) {
         super(getName(device));
@@ -38,7 +38,8 @@ public class DeviceListener extends Thread
         this.mainwin = mainwin;
         this.device = device;
         
-        analyzer = new PacketAnalyzer(handler);      
+
+        logger.debug("device " + device.getName());
         
        final Thread sender = this;
 
@@ -47,6 +48,8 @@ public class DeviceListener extends Thread
             @Override
             public void nextPacket(PcapPacket packet, String user) {
                
+                // logger.debug("nextPacket " + user);
+                
                 Ethernet eth = null;                
                 Ip4 ipv4 = null;
                 
@@ -65,16 +68,21 @@ public class DeviceListener extends Thread
 
                 if (tcp != null) {
 
-                    try {
-                        if (handler.wantPacket(ipv4, tcp)) {
-                            handler.eatPacket(ipv4, tcp);
-                        }
-                    } catch (Exception ex) {
-                        logger.debug(ex);
+                    synchronized (handlers) {
+                        for (StreamHandler handler : handlers) {
+                            try {
+                                // logger.trace("here");
+                                if (handler.wantPacket(ipv4, tcp)) {
+                                    handler.eatPacket(ipv4, tcp);
+                                }
+                            } catch (Exception ex) {
+                                logger.debug(ex);
+                            }
+                        } // for
                     }
-                }
+                } // if
                 
-            }
+            } // next Packet
         };
     }
     
@@ -114,24 +122,24 @@ public class DeviceListener extends Thread
     
     @Override
     public void run()
-    {
+    {        
+        logger.debug("starting device listener on " + getName() + " " + device.getName());
+        
         int snaplen = 64 * 1024;           // Capture all packets, no trucation  
         int flags = Pcap.MODE_PROMISCUOUS; // capture all packets  
-        int timeout = 500;           // 10 seconds in millis  
-        pcap = Pcap.openLive(device.getName(), snaplen, flags, timeout, errbuf);
+        int timeout = 500;
+        pcap = Pcap.openLive(device.getName(), snaplen, flags, timeout, errbuf);       
 
         if (pcap == null) {
             logger.error("Error while opening device for capture: "
                     + errbuf.toString());
             return;
-        } 
-        
-        analyzer.start();
+        }                 
         
         while( !do_stop ) {            
             
-            try {
-                pcap.loop(100, jpacketHandler, this.getName());
+            try {                
+                pcap.loop(100, jpacketHandler, getName());
             } catch( Exception ex ) {
                 logger.error(ex);
             }
@@ -140,13 +148,13 @@ public class DeviceListener extends Thread
                 break;            
         }
         
+        logger.debug("Stopping devicelistener" );
         pcap.close();
     }
     
     void doStop()
     {
-        do_stop = true;
-        analyzer.doStop();
+        do_stop = true;        
         pcap.breakloop();        
     }
     
@@ -178,5 +186,17 @@ public class DeviceListener extends Thread
             descr += " " + better_descr;
         
         return descr;
+    }
+
+    void addHandler(StreamHandler handler) {
+        synchronized (handlers) {
+            handlers.add(handler);
+        }
+    }
+    
+    void removeHandler(StreamHandler handler) {
+        synchronized (handlers) {
+            handlers.remove(handler);
+        }
     }
 }

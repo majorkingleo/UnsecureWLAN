@@ -11,6 +11,7 @@ import at.redeye.FrameWork.base.Setup;
 import at.redeye.FrameWork.base.prm.impl.gui.LocalConfig;
 import at.redeye.FrameWork.base.tablemanipulator.TableManipulator;
 import at.redeye.Plugins.ShellExec.ShellExec;
+import at.redeye.UnsecureWLAN.views.connections.ConnectionsView;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ public class MainWin extends BaseDialog {
     List<PcapIf> alldevs = new ArrayList<PcapIf>();
     ArrayList<InterfaceStruct> interfaces;
     Vector<DeviceListener> listeners;
-    
+    ArrayList<StreamHandler> handlers = new ArrayList<StreamHandler>();
     
     public MainWin(Root root) {
         super(root,root.getAppTitle());
@@ -169,18 +170,32 @@ public class MainWin extends BaseDialog {
     {
         stoppAllDevices();
         
-        for( PcapIf device : alldevs ) {            
-            for( InterfaceStruct iface :  interfaces ) {
-                if( iface.dev_name.getValue().equals(networkinterface.dev_name.getValue())) {
-                    DeviceListener listener = new DeviceListener(device, this);
-                    listener.start();
-                    listeners.add(listener);
-                    logger.debug("listen on device " + networkinterface.dev_name.getValue());
-                    root.getSetup().setLocalConfig("listendevice", networkinterface.dev_name.getValue());
-                    return;
-                } // if
-            } // for  
-        } // for
+        PcapIf device = null;
+        
+        for( PcapIf dev : alldevs ) {            
+            if( dev.getName().equals(networkinterface.dev_name.getValue())) {
+                device = dev;
+                break;
+            }
+        }
+        
+        for (InterfaceStruct iface : interfaces) {
+            logger.debug(iface.dev_name.getValue() + " == " + networkinterface.dev_name.getValue());
+            if (iface.dev_name.getValue().equals(networkinterface.dev_name.getValue())) {
+                logger.debug("YES");
+                DeviceListener listener = new DeviceListener(device, this);
+                listener.start();
+                listeners.add(listener);
+                logger.debug("listen on device " + networkinterface.dev_name.getValue());
+                root.getSetup().setLocalConfig("listendevice", networkinterface.dev_name.getValue());
+
+                for (StreamHandler handler : handlers) {
+                    listener.addHandler(handler);
+                }
+
+                return;
+            } // if
+        } // for  
     }
     
     public void stoppAllDevices()
@@ -215,6 +230,7 @@ public class MainWin extends BaseDialog {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jMenuItem2 = new javax.swing.JMenuItem();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
         jMenuBar1 = new javax.swing.JMenuBar();
@@ -223,9 +239,13 @@ public class MainWin extends BaseDialog {
         jSeparator2 = new javax.swing.JPopupMenu.Separator();
         jMenuItem1 = new javax.swing.JMenuItem();
         jMInterface = new javax.swing.JMenu();
+        jMenu3 = new javax.swing.JMenu();
+        jMConnectionsView = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         jMAbout = new javax.swing.JMenuItem();
         jMChangeLog = new javax.swing.JMenuItem();
+
+        jMenuItem2.setText("jMenuItem2");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -256,6 +276,18 @@ public class MainWin extends BaseDialog {
 
         jMInterface.setText("Interface");
         jMenuBar1.add(jMInterface);
+
+        jMenu3.setText("Ansichten");
+
+        jMConnectionsView.setText("Verbindungen");
+        jMConnectionsView.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMConnectionsViewActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jMConnectionsView);
+
+        jMenuBar1.add(jMenu3);
 
         jMenu2.setText("Info");
 
@@ -315,18 +347,43 @@ public class MainWin extends BaseDialog {
     private void jMSettingsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMSettingsActionPerformed
         invokeDialogUnique(new LocalConfig(root));
     }//GEN-LAST:event_jMSettingsActionPerformed
+
+    private void jMConnectionsViewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMConnectionsViewActionPerformed
+        invokeDialogUnique(new ConnectionsView(root, this));
+    }//GEN-LAST:event_jMConnectionsViewActionPerformed
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem jMAbout;
     private javax.swing.JMenuItem jMChangeLog;
+    private javax.swing.JMenuItem jMConnectionsView;
     private javax.swing.JMenu jMInterface;
     private javax.swing.JMenuItem jMSettings;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenu jMenu3;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JPopupMenu.Separator jSeparator2;
     private javax.swing.JTextArea jTextArea1;
     // End of variables declaration//GEN-END:variables
+
+    public void registerHandler(StreamHandler handler) {
+        handlers.add(handler);
+        
+        for (DeviceListener listener : listeners) {
+            listener.addHandler( handler );
+        }
+    }
+    
+    public void unregisterHandler(StreamHandler handler) {
+        handlers.remove(handler);
+        
+        if( listeners != null ) {        
+            for (DeviceListener listener : listeners) {
+                listener.removeHandler( handler );
+            }        
+        }
+    }
 }
