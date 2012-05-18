@@ -20,6 +20,7 @@ public class StreamHandler {
     
     final HashMap<String,StreamEntryWithoutContent> entries = new HashMap<String,StreamEntryWithoutContent>();    
 
+    // int count= 0;
     
     public StreamHandler()
     {
@@ -34,12 +35,22 @@ public class StreamHandler {
     {
         StreamEntry entry = new StreamEntry(ip4, tcp);        
         
+        // count++;
+        
+        // logger.debug( "count: " + count + " e: " + entry.getConnectionId() + " " + entry.getPayLoadLength());
+        
+        
+        if( entry.getPayLoadLength() == 0 ) {
+            // ignore empty packets
+            return entry;
+        }
+        
         synchronized( entries )
         {
-            StreamEntryWithoutContent existing = entries.get(entry.toString());
+            StreamEntryWithoutContent existing = entries.get(entry.getConnectionId());
         
             if( existing == null ) {
-                entries.put(entry.toString(),entry);
+                entries.put(entry.getConnectionId(),entry);
                 return entry;
             } else {
                 existing.append(entry);
@@ -89,4 +100,9 @@ public class StreamHandler {
         return res;
     }    
 
+    public void removeEntry( StreamEntryWithoutContent entry ) {
+         synchronized( entries ) {
+             entries.remove(entry.getConnectionId());
+         }         
+    }
 }

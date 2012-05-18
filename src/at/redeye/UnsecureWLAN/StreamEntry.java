@@ -15,8 +15,8 @@ import org.jnetpcap.protocol.tcpip.Tcp;
  */
 public class StreamEntry extends StreamEntryWithoutContent {
                
-    ByteBuffer buffer;
-        
+    ByteBuffer buffer;  
+    
     public StreamEntry( Ip4 ipv4, Tcp tcp ) throws UnknownHostException
     {
         super(ipv4,tcp);
@@ -33,17 +33,24 @@ public class StreamEntry extends StreamEntryWithoutContent {
             buffer = ByteBuffer.wrap(bytes);
         } 
     }
-        
-    public void append(StreamEntry entry) 
-    {        
+            
+    @Override
+    public void append(StreamEntryWithoutContent entry) {
         super.append(entry);
 
-        synchronized (this) {
-            ByteBuffer tmp_buffer = ByteBuffer.allocate(buffer.capacity() + entry.buffer.capacity());
-            tmp_buffer.put(buffer);
-            tmp_buffer.put(entry.buffer);
-            buffer = tmp_buffer;
-            logger.debug(connectionId + " " + String.valueOf(buffer.capacity()));
+        if (entry instanceof StreamEntry) {
+            StreamEntry sentry = (StreamEntry) entry;
+
+            synchronized (this) {
+                ByteBuffer tmp_buffer = ByteBuffer.allocate(buffer.limit() + sentry.buffer.limit());
+                buffer.position(0);
+                tmp_buffer.put(buffer);
+                sentry.buffer.position(0);
+                tmp_buffer.put(sentry.buffer);
+                buffer = tmp_buffer;
+                buffer.position(0);
+//                logger.debug(connectionId + " cap: " + String.valueOf(buffer.capacity()));
+            }
         }
     }
     

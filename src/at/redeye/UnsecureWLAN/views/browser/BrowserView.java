@@ -4,6 +4,7 @@
  */
 package at.redeye.UnsecureWLAN.views.browser;
 
+import at.redeye.UnsecureWLAN.views.lib.HTTPGet;
 import at.redeye.FrameWork.base.AutoMBox;
 import at.redeye.FrameWork.base.BaseDialog;
 import at.redeye.FrameWork.base.Root;

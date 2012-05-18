@@ -13,6 +13,8 @@ public class Port80Handler extends StreamHandler
 {
     private static final Logger logger = Logger.getLogger(Port80Handler.class);
     
+    int count = 0;
+    
     public Port80Handler()
     {
         
@@ -21,6 +23,13 @@ public class Port80Handler extends StreamHandler
     @Override
     public boolean wantPacket( Ip4 ip4, Tcp tcp )
     {       
+        
+        count++;
+        
+        if( count == 22 ) {
+            logger.debug("here");
+        }        
+        
         if( (tcp.destination() == 80) ||
             (tcp.source() == 80) ) {
             return true;

@@ -6,13 +6,19 @@ package at.redeye.UnsecureWLAN.views.images;
 
 import at.redeye.FrameWork.base.BaseDialog;
 import at.redeye.FrameWork.base.Root;
-import at.redeye.FrameWork.base.imagestorage.ImageUtils;
+import at.redeye.FrameWork.base.imagestorage.ImageCellRenderer;
 import at.redeye.UnsecureWLAN.MainWin;
 import at.redeye.UnsecureWLAN.StreamEntry;
 import at.redeye.UnsecureWLAN.StreamEntryWithoutContent;
 import at.redeye.UnsecureWLAN.views.browser.Port80Handler;
+import at.redeye.UnsecureWLAN.views.lib.HTTPContent;
+import java.awt.MediaTracker;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.TimerTask;
+import java.util.Vector;
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
@@ -24,6 +30,7 @@ public class ImagesView extends BaseDialog {
 
     MainWin main_win;    
     Port80Handler handler;    
+    Vector<JLabel> labels = new Vector<JLabel>();
     
     public ImagesView(Root root, MainWin main_win) {
         super(root, root.MlM("Bilder"));
@@ -47,6 +54,9 @@ public class ImagesView extends BaseDialog {
                 });
             }
         }, 300, 1000);        
+        
+        imageList.setCellRenderer(new ImageCellRenderer());
+                
     }
 
     @Override
@@ -66,7 +76,7 @@ public class ImagesView extends BaseDialog {
             StreamEntry e = (StreamEntry) entry;
             String data = null;
 
-            byte[] bytes;
+            byte[] bytes = null;            
             boolean is_image = false;
 
             try {
@@ -74,20 +84,66 @@ public class ImagesView extends BaseDialog {
                 
                 if (bytes != null) {
 
-                    logger.debug(new String(bytes));
+                    // logger.debug(new String(bytes));
+                    HTTPContent content = new HTTPContent(bytes);
                     
-                    DetectImage.IMAGE_TYPES type = DetectImage.guessImageType(bytes);
-
-                    if (type != DetectImage.IMAGE_TYPES.UNKNOWN) {
-                        is_image = true;
-                    } 
+                    byte[] payload = content.getPayload();
                     
-                    if( is_image ) {
+                    if (payload != null) {
+                        
+                        String mime_type = content.getHeader("Content-Type");
+                        
+                        if( mime_type != null ) {
+                            is_image = is_image_mime_type(mime_type);
+                        }
+                        
+                        DetectImage.IMAGE_TYPES type = DetectImage.IMAGE_TYPES.UNKNOWN;
+                        
+                        if (!is_image) {
+                            type = DetectImage.guessImageType(payload);
 
-                        logger.debug("image detected: " + e.getConnectionId() + " " + type.toString() );
-                        ImageIcon icon = ImageUtils.loadImageIcon(bytes, e.getConnectionId());
+                            if (type != DetectImage.IMAGE_TYPES.UNKNOWN) {
+                                is_image = true;
+                            }
+                        }
 
-                        imageList.add(new JLabel(e.getConnectionId(), icon, JLabel.LEFT));
+                        if (is_image) {                           
+                            
+                            logger.debug("image detected: " + e.getConnectionId());
+                            // ImageIcon icon = new ImageIcon(payload, e.getConnectionId() + "." + type.toString());
+
+                            ImageIcon icon = null;
+                            
+                            try {
+                                BufferedImage buf_img = ImageIO.read(new ByteArrayInputStream(payload));
+                                
+                                if( buf_img != null ) {                                
+                                    icon = new ImageIcon(buf_img);
+                                }
+                            } catch( Exception ex ) {
+                                logger.error(ex,ex);
+                            }
+                            
+                            /*
+                            FileOutputStream fout = new FileOutputStream("/tmp/foo.gif");
+                            fout.write(payload);
+                            fout.close();
+                            */
+                            if (icon != null) {
+                                if (icon.getImageLoadStatus() == MediaTracker.ERRORED) {
+                                    logger.debug("image has still errors");
+                                    // this image needs more data                                                                  
+                                } else {
+                                    // logger.debug("Status: " + icon.getImageLoadStatus());
+                                    JLabel label = new JLabel(e.getConnectionId(), icon, JLabel.LEFT);
+                                    label.setVisible(true);
+                                    labels.add(label);
+                                    added_something = true;
+
+                                    handler.removeEntry(entry);
+                                }
+                            }
+                        }
                     }
 
                 }
@@ -96,8 +152,27 @@ public class ImagesView extends BaseDialog {
             }
 
         }
+        
+        imageList.setListData(labels);
 
+        int lastIndex = imageList.getModel().getSize() - 1;
+        if (lastIndex >= 0) {
+            imageList.ensureIndexIsVisible(lastIndex);
+        }
     }
+  
+    static boolean is_image_mime_type( String mime )
+    {
+        if( mime.equals("image/jpeg") )
+            return true;
+        else if( mime.equals("image/gif") )
+            return true;
+        else if( mime.equals("image/png") )
+            return true;
+
+        return false;
+    }
+      
 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -107,11 +182,6 @@ public class ImagesView extends BaseDialog {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
-        imageList.setModel(new javax.swing.AbstractListModel() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public Object getElementAt(int i) { return strings[i]; }
-        });
         jScrollPane2.setViewportView(imageList);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());

@@ -25,20 +25,22 @@ public class StreamEntryWithoutContent {
     String source_ip;
     int dest_port;
     int source_port;
+    long payload_length;
     
     public StreamEntryWithoutContent( Ip4 ipv4, Tcp tcp ) throws UnknownHostException
     {
         dest_ip = InetAddress.getByAddress(ipv4.destination()).toString();
         source_ip = InetAddress.getByAddress(ipv4.source()).toString();
         
-        connectionId = String.format("%s:%d - %s:%d", 
-                dest_ip, tcp.destination(),
-                source_ip, tcp.source());              
+        connectionId = String.format("%s:%d - %s:%d",                 
+                source_ip, tcp.source(),
+                dest_ip, tcp.destination());              
         
         dest_port = tcp.destination();
         source_port = tcp.source();
         
         update_time = creation_time = System.currentTimeMillis();
+        payload_length = tcp.getPayloadLength();
     }
     
     @Override
@@ -77,5 +79,9 @@ public class StreamEntryWithoutContent {
     
     public long getModificationTime() {
         return update_time;
+    }
+    
+    public long getPayLoadLength() {
+        return payload_length;
     }
 }

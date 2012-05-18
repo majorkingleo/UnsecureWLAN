@@ -428,6 +428,8 @@ public class MainWin extends BaseDialog {
             }
             
             listener.start();
+            
+            last_path = file.getPath();
         }
         
     }//GEN-LAST:event_jMOpenTcpDumpActionPerformed
