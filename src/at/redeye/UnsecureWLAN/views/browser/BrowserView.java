@@ -24,7 +24,7 @@ public class BrowserView extends BaseDialog {
 
     MainWin main_win;
     TableManipulator tm;
-    BrowserHandler handler;
+    Port80Handler handler;
     Vector<BrowserStrukt> connections = new Vector();
     
     public BrowserView(Root root, MainWin main_win) {
@@ -39,7 +39,7 @@ public class BrowserView extends BaseDialog {
         tm.hide(strukt.connection_id);
         tm.prepareTable();
         
-        handler = new BrowserHandler();
+        handler = new Port80Handler();
         main_win.registerHandler( handler );
 
         getAutoRefreshTimer().schedule(new TimerTask() {

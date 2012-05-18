@@ -9,11 +9,11 @@ import org.jnetpcap.protocol.tcpip.Tcp;
  *
  * @author root
  */
-public class BrowserHandler extends StreamHandler 
+public class Port80Handler extends StreamHandler 
 {
-    private static final Logger logger = Logger.getLogger(BrowserHandler.class);
+    private static final Logger logger = Logger.getLogger(Port80Handler.class);
     
-    public BrowserHandler()
+    public Port80Handler()
     {
         
     }

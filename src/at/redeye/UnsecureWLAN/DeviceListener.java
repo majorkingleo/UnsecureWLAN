@@ -23,7 +23,7 @@ import org.jnetpcap.protocol.tcpip.Tcp;
  */
 public class DeviceListener extends Thread
 {
-    private static final Logger logger = Logger.getLogger(DeviceListener.class);
+    protected static final Logger logger = Logger.getLogger(DeviceListener.class);
     PcapIf device;
     StringBuilder errbuf = new StringBuilder();
     PcapPacketHandler<String> jpacketHandler;
@@ -39,9 +39,15 @@ public class DeviceListener extends Thread
         this.device = device;
         
 
-        logger.debug("device " + device.getName());
+        if( device != null )
+            logger.debug("device " + device.getName());
         
-       final Thread sender = this;
+        init();
+    }   
+    
+    final void init()
+    {
+        final Thread sender = this;
 
         jpacketHandler = new PcapPacketHandler<String>() {
 
@@ -118,17 +124,28 @@ public class DeviceListener extends Thread
         l <<= 8;
         l |= b[3] & 0xFF;
         return l;
-    } 
+    }         
+    
+    public Pcap openDevice() {
+
+        if (device != null) {
+            logger.debug("starting device listener on " + getName() + " " + device.getName());
+
+            int snaplen = 64 * 1024;           // Capture all packets, no trucation  
+            int flags = Pcap.MODE_PROMISCUOUS; // capture all packets  
+            int timeout = 500;
+            Pcap pcap_device = Pcap.openLive(device.getName(), snaplen, flags, timeout, errbuf);
+
+            return pcap_device;
+        }
+
+        return null;
+    }
     
     @Override
     public void run()
     {        
-        logger.debug("starting device listener on " + getName() + " " + device.getName());
-        
-        int snaplen = 64 * 1024;           // Capture all packets, no trucation  
-        int flags = Pcap.MODE_PROMISCUOUS; // capture all packets  
-        int timeout = 500;
-        pcap = Pcap.openLive(device.getName(), snaplen, flags, timeout, errbuf);       
+        pcap = openDevice();   
 
         if (pcap == null) {
             logger.error("Error while opening device for capture: "
@@ -139,7 +156,9 @@ public class DeviceListener extends Thread
         while( !do_stop ) {            
             
             try {                
-                pcap.loop(100, jpacketHandler, getName());
+                if( pcap.loop(0, jpacketHandler, getName()) < 0 ) {
+                    break;
+                }
             } catch( Exception ex ) {
                 logger.error(ex);
             }
@@ -154,11 +173,17 @@ public class DeviceListener extends Thread
     
     void doStop()
     {
-        do_stop = true;        
-        pcap.breakloop();        
+        do_stop = true;       
+        
+        if( pcap != null ) {
+            pcap.breakloop();   
+        }
     }
     
     public static String getName(PcapIf device ) {
+                                
+        if( device == null )
+            return "";
         
         String descr = device.getDescription();
         

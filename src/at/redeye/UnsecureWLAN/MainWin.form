@@ -14,6 +14,16 @@
             <Property name="text" type="java.lang.String" value="Programm"/>
           </Properties>
           <SubComponents>
+            <MenuItem class="javax.swing.JMenuItem" name="jMOpenTcpDump">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Tcp Dump &#xd6;ffnen"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMOpenTcpDumpActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JPopupMenu$Separator" name="jSeparator1">
+            </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="jMSettings">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Einstellungen"/>
@@ -58,6 +68,14 @@
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMBrowseActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="jMImages">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Bilder"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMImagesActionPerformed"/>
               </Events>
             </MenuItem>
           </SubComponents>

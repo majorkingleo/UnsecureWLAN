@@ -10,16 +10,15 @@ import at.redeye.FrameWork.base.tablemanipulator.TableManipulator;
 import at.redeye.Plugins.ShellExec.ShellExec;
 import at.redeye.UnsecureWLAN.views.browser.BrowserView;
 import at.redeye.UnsecureWLAN.views.connections.ConnectionsView;
+import at.redeye.UnsecureWLAN.views.images.ImagesView;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
-import javax.swing.ButtonGroup;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JRadioButtonMenuItem;
+import javax.swing.*;
 import org.apache.log4j.PatternLayout;
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapIf;
@@ -37,6 +36,7 @@ public class MainWin extends BaseDialog {
     ArrayList<InterfaceStruct> interfaces;
     Vector<DeviceListener> listeners;
     ArrayList<StreamHandler> handlers = new ArrayList<StreamHandler>();
+    private static String last_path = null;
     
     public MainWin(Root root) {
         super(root,root.getAppTitle());
@@ -56,6 +56,7 @@ public class MainWin extends BaseDialog {
         
         BaseModuleLauncher.logger.addAppender( appender  );
                 
+        last_path = root.getSetup().getLocalConfig("LastPath","");
         
         java.awt.EventQueue.invokeLater(new Runnable() {
 
@@ -116,17 +117,15 @@ public class MainWin extends BaseDialog {
             iface.dev_name.loadFromString(device.getName());
             
             interfaces.add(iface);
-/*            
-            if( iface.iface.toString().contains("wlan") ) {     
-                iface.listen.loadFromString("JA");
-                DeviceListener listener = new DeviceListener(device, this);
-                listener.start();
-                listeners.add(listener);
-                break;
-            }
-*/           
+
         }
-               
+
+        {
+            InterfaceStruct iface = new InterfaceStruct();
+            iface.iface.loadFromString("keines");
+            iface.dev_name.loadFromString("keines");
+            interfaces.add(iface);
+        }
         
         ButtonGroup bgroup  = new ButtonGroup();
         
@@ -177,24 +176,31 @@ public class MainWin extends BaseDialog {
                 break;
             }
         }
+                
+            for (InterfaceStruct iface : interfaces) {
+                logger.debug(iface.dev_name.getValue() + " == " + networkinterface.dev_name.getValue());
+                if (iface.dev_name.getValue().equals(networkinterface.dev_name.getValue())) {
+                    logger.debug("YES");
+                    
+                    if( device != null) {
+                        DeviceListener listener = new DeviceListener(device, this);
+                        
+                        for (StreamHandler handler : handlers) {
+                            listener.addHandler(handler);
+                        }                        
+                                                
+                        listener.start();
+                        listeners.add(listener);
+                        logger.debug("listen on device " + networkinterface.dev_name.getValue());
+                                            }
+                    
+                    root.getSetup().setLocalConfig("listendevice", networkinterface.dev_name.getValue());
+
+
+                    return;
+                } // if
+            } // for  
         
-        for (InterfaceStruct iface : interfaces) {
-            logger.debug(iface.dev_name.getValue() + " == " + networkinterface.dev_name.getValue());
-            if (iface.dev_name.getValue().equals(networkinterface.dev_name.getValue())) {
-                logger.debug("YES");
-                DeviceListener listener = new DeviceListener(device, this);
-                listener.start();
-                listeners.add(listener);
-                logger.debug("listen on device " + networkinterface.dev_name.getValue());
-                root.getSetup().setLocalConfig("listendevice", networkinterface.dev_name.getValue());
-
-                for (StreamHandler handler : handlers) {
-                    listener.addHandler(handler);
-                }
-
-                return;
-            } // if
-        } // for  
     }
     
     public void stoppAllDevices()
@@ -221,6 +227,8 @@ public class MainWin extends BaseDialog {
         listeners = null;
         interfaces = null;        
 
+        root.getSetup().setLocalConfig("LastPath", last_path);
+        
         super.close();
     }
   
@@ -234,6 +242,8 @@ public class MainWin extends BaseDialog {
         jTextArea1 = new javax.swing.JTextArea();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
+        jMOpenTcpDump = new javax.swing.JMenuItem();
+        jSeparator1 = new javax.swing.JPopupMenu.Separator();
         jMSettings = new javax.swing.JMenuItem();
         jSeparator2 = new javax.swing.JPopupMenu.Separator();
         jMenuItem1 = new javax.swing.JMenuItem();
@@ -241,6 +251,7 @@ public class MainWin extends BaseDialog {
         jMenu3 = new javax.swing.JMenu();
         jMConnectionsView = new javax.swing.JMenuItem();
         jMBrowse = new javax.swing.JMenuItem();
+        jMImages = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         jMAbout = new javax.swing.JMenuItem();
         jMChangeLog = new javax.swing.JMenuItem();
@@ -254,6 +265,15 @@ public class MainWin extends BaseDialog {
         jScrollPane2.setViewportView(jTextArea1);
 
         jMenu1.setText("Programm");
+
+        jMOpenTcpDump.setText("Tcp Dump Öffnen");
+        jMOpenTcpDump.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMOpenTcpDumpActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMOpenTcpDump);
+        jMenu1.add(jSeparator1);
 
         jMSettings.setText("Einstellungen");
         jMSettings.addActionListener(new java.awt.event.ActionListener() {
@@ -294,6 +314,14 @@ public class MainWin extends BaseDialog {
             }
         });
         jMenu3.add(jMBrowse);
+
+        jMImages.setText("Bilder");
+        jMImages.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMImagesActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jMImages);
 
         jMenuBar1.add(jMenu3);
 
@@ -363,13 +391,55 @@ public class MainWin extends BaseDialog {
     private void jMBrowseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMBrowseActionPerformed
          invokeDialogUnique(new BrowserView(root, this));
     }//GEN-LAST:event_jMBrowseActionPerformed
+
+    private void jMImagesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMImagesActionPerformed
+         invokeDialogUnique(new ImagesView(root, this));
+    }//GEN-LAST:event_jMImagesActionPerformed
+
+    private void jMOpenTcpDumpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMOpenTcpDumpActionPerformed
+        
+        JFileChooser fc = new JFileChooser();
+
+        fc.setAcceptAllFileFilterUsed(false);
+        // fc.setFileFilter(new MSGFileFilter(root));
+        fc.setMultiSelectionEnabled(true);
+
+        logger.info("last path: " + last_path);
+
+        if (last_path != null) {
+            fc.setCurrentDirectory(new File(last_path));
+        }
+
+        int retval = fc.showOpenDialog(this);
+
+        if (retval != 0) {
+            return;
+        }
+
+        final File[] files = fc.getSelectedFiles();
+
+        for( File file : files )
+        {
+            DeviceListenerFromFile listener = new DeviceListenerFromFile(file, this);
+            listeners.add(listener);
+            
+            for( StreamHandler handler : handlers ) {
+                listener.addHandler(handler);
+            }
+            
+            listener.start();
+        }
+        
+    }//GEN-LAST:event_jMOpenTcpDumpActionPerformed
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem jMAbout;
     private javax.swing.JMenuItem jMBrowse;
     private javax.swing.JMenuItem jMChangeLog;
     private javax.swing.JMenuItem jMConnectionsView;
+    private javax.swing.JMenuItem jMImages;
     private javax.swing.JMenu jMInterface;
+    private javax.swing.JMenuItem jMOpenTcpDump;
     private javax.swing.JMenuItem jMSettings;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
@@ -378,6 +448,7 @@ public class MainWin extends BaseDialog {
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
     private javax.swing.JTextArea jTextArea1;
     // End of variables declaration//GEN-END:variables
@@ -435,5 +506,17 @@ public class MainWin extends BaseDialog {
             return "explorer";
 
         return root.getSetup().getLocalConfig(FrameWorkConfigDefinitions.OpenCommand);
-    }    
+    }
+
+    void removeListener(final DeviceListener listener) {
+        
+        java.awt.EventQueue.invokeLater(new Runnable(){
+            public void run() {
+                
+                listeners.remove(listener);
+                
+            }            
+        });
+        
+    }
 }
