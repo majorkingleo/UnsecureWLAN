@@ -34,7 +34,7 @@ public class StreamEntryWithoutContent {
         
         connectionId = String.format("%s:%d - %s:%d",                 
                 source_ip, tcp.source(),
-                dest_ip, tcp.destination());              
+                dest_ip, tcp.destination());                             
         
         dest_port = tcp.destination();
         source_port = tcp.source();

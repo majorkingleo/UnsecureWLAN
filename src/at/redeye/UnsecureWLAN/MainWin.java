@@ -11,6 +11,7 @@ import at.redeye.Plugins.ShellExec.ShellExec;
 import at.redeye.UnsecureWLAN.views.browser.BrowserView;
 import at.redeye.UnsecureWLAN.views.connections.ConnectionsView;
 import at.redeye.UnsecureWLAN.views.images.ImagesView;
+import at.redeye.UnsecureWLAN.views.passwords.PasswordView;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -252,6 +253,7 @@ public class MainWin extends BaseDialog {
         jMConnectionsView = new javax.swing.JMenuItem();
         jMBrowse = new javax.swing.JMenuItem();
         jMImages = new javax.swing.JMenuItem();
+        jMPasswords = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         jMAbout = new javax.swing.JMenuItem();
         jMChangeLog = new javax.swing.JMenuItem();
@@ -322,6 +324,14 @@ public class MainWin extends BaseDialog {
             }
         });
         jMenu3.add(jMImages);
+
+        jMPasswords.setText("Passwörter");
+        jMPasswords.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMPasswordsActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jMPasswords);
 
         jMenuBar1.add(jMenu3);
 
@@ -433,6 +443,10 @@ public class MainWin extends BaseDialog {
         }
         
     }//GEN-LAST:event_jMOpenTcpDumpActionPerformed
+
+    private void jMPasswordsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMPasswordsActionPerformed
+        invokeDialogUnique(new PasswordView(root, this));
+    }//GEN-LAST:event_jMPasswordsActionPerformed
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem jMAbout;
@@ -442,6 +456,7 @@ public class MainWin extends BaseDialog {
     private javax.swing.JMenuItem jMImages;
     private javax.swing.JMenu jMInterface;
     private javax.swing.JMenuItem jMOpenTcpDump;
+    private javax.swing.JMenuItem jMPasswords;
     private javax.swing.JMenuItem jMSettings;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
