@@ -76,17 +76,6 @@ public class HTTPContent
         }
     }
     
-    public String getRequestUrl()
-    {
-        String host =  http_headers.get("Host");
-        
-        if( host != null ) {
-            return "http://" + host + url;
-        }
-        
-        return url;
-    }
-    
     public byte[] getPayload()
     {
         return payload;

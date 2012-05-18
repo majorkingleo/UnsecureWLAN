@@ -11,16 +11,20 @@ import at.redeye.UnsecureWLAN.MainWin;
 import at.redeye.UnsecureWLAN.StreamEntry;
 import at.redeye.UnsecureWLAN.StreamEntryWithoutContent;
 import at.redeye.UnsecureWLAN.views.browser.Port80Handler;
+import at.redeye.UnsecureWLAN.views.images.test.PicStrip;
 import at.redeye.UnsecureWLAN.views.lib.HTTPContent;
 import java.awt.MediaTracker;
+import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.TimerTask;
 import java.util.Vector;
 import javax.imageio.ImageIO;
+import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -31,6 +35,7 @@ public class ImagesView extends BaseDialog {
     MainWin main_win;    
     Port80Handler handler;    
     Vector<JLabel> labels = new Vector<JLabel>();
+    private DefaultListModel iconListModel = new DefaultListModel();
     
     public ImagesView(Root root, MainWin main_win) {
         super(root, root.MlM("Bilder"));
@@ -56,6 +61,7 @@ public class ImagesView extends BaseDialog {
         }, 300, 1000);        
         
         imageList.setCellRenderer(new ImageCellRenderer());
+        imageList.setModel(iconListModel);
                 
     }
 
@@ -71,13 +77,26 @@ public class ImagesView extends BaseDialog {
         HashMap<String,StreamEntryWithoutContent> con_map = handler.getEntries();
         boolean added_something = false;
         
+        final long dropouttime = System.currentTimeMillis() - 1000L * 60 * 5;
+        final long waittime = System.currentTimeMillis() - 1000L * 1;
+        
         for (StreamEntryWithoutContent entry : con_map.values()) {
 
-            StreamEntry e = (StreamEntry) entry;
+            final StreamEntry e = (StreamEntry) entry;
             String data = null;
 
             byte[] bytes = null;            
             boolean is_image = false;
+            
+            // drop out all pakets that are older than 5 minutes
+            if( e.getCreationTime() < dropouttime ) {
+                handler.removeEntry(entry);
+            }
+            
+            // skip unifished loaded pictures
+            if( e.getModificationTime() > waittime ) {
+                continue;
+            }
 
             try {
                 bytes = e.getByteArray();
@@ -85,13 +104,13 @@ public class ImagesView extends BaseDialog {
                 if (bytes != null) {
 
                     // logger.debug(new String(bytes));
-                    HTTPContent content = new HTTPContent(bytes);
+                    final HTTPContent content = new HTTPContent(bytes);
                     
                     byte[] payload = content.getPayload();
                     
                     if (payload != null) {
                         
-                        String mime_type = content.getHeader("Content-Type");
+                        final String mime_type = content.getHeader("Content-Type");
                         
                         if( mime_type != null ) {
                             is_image = is_image_mime_type(mime_type);
@@ -141,6 +160,7 @@ public class ImagesView extends BaseDialog {
                                     added_something = true;
 
                                     handler.removeEntry(entry);
+                                    iconListModel.addElement(label);
                                 }
                             }
                         }
@@ -153,12 +173,18 @@ public class ImagesView extends BaseDialog {
 
         }
         
-        imageList.setListData(labels);
+      if (added_something) {
+          Window win = SwingUtilities.getWindowAncestor(imageList);
+          win.pack();
 
-        int lastIndex = imageList.getModel().getSize() - 1;
-        if (lastIndex >= 0) {
-            imageList.ensureIndexIsVisible(lastIndex);
-        }
+          /*
+           * imageList.setListData(labels);
+           */
+          int lastIndex = imageList.getModel().getSize() - 1;
+          if (lastIndex >= 0) {
+              imageList.ensureIndexIsVisible(lastIndex);
+          }
+      }
     }
   
     static boolean is_image_mime_type( String mime )
