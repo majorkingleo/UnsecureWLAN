@@ -1,41 +1,17 @@
 package at.redeye.UnsecureWLAN.views.browser;
 
-import at.redeye.UnsecureWLAN.StreamHandler;
-import org.apache.log4j.Logger;
-import org.jnetpcap.protocol.network.Ip4;
-import org.jnetpcap.protocol.tcpip.Tcp;
+import at.redeye.UnsecureWLAN.views.lib.PortHandler;
 
 /**
  *
  * @author root
  */
-public class Port80Handler extends StreamHandler 
+public class Port80Handler extends PortHandler 
 {
-    private static final Logger logger = Logger.getLogger(Port80Handler.class);
-    
-    int count = 0;
     
     public Port80Handler()
     {
-        
-    }
-            
-    @Override
-    public boolean wantPacket( Ip4 ip4, Tcp tcp )
-    {       
-        
-        count++;
-        
-        if( count == 22 ) {
-            logger.debug("here");
-        }        
-        
-        if( (tcp.destination() == 80) ||
-            (tcp.source() == 80) ) {
-            return true;
-        }
-        
-        return false;
-    }    
+        super( 80 );
+    }               
 
 }

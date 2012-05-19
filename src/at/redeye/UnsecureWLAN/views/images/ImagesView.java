@@ -11,15 +11,14 @@ import at.redeye.UnsecureWLAN.MainWin;
 import at.redeye.UnsecureWLAN.StreamEntry;
 import at.redeye.UnsecureWLAN.StreamEntryWithoutContent;
 import at.redeye.UnsecureWLAN.views.browser.Port80Handler;
-import at.redeye.UnsecureWLAN.views.images.test.PicStrip;
 import at.redeye.UnsecureWLAN.views.lib.HTTPContent;
 import java.awt.MediaTracker;
 import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TimerTask;
-import java.util.Vector;
 import javax.imageio.ImageIO;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
@@ -34,7 +33,7 @@ public class ImagesView extends BaseDialog {
 
     MainWin main_win;    
     Port80Handler handler;    
-    Vector<JLabel> labels = new Vector<JLabel>();
+    ArrayList<JLabel> labels = new ArrayList<JLabel>();
     private DefaultListModel iconListModel = new DefaultListModel();
     
     public ImagesView(Root root, MainWin main_win) {

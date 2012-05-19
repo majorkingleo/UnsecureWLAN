@@ -10,13 +10,11 @@ import at.redeye.FrameWork.base.tablemanipulator.TableManipulator;
 import at.redeye.UnsecureWLAN.MainWin;
 import at.redeye.UnsecureWLAN.StreamEntry;
 import at.redeye.UnsecureWLAN.StreamEntryWithoutContent;
-import at.redeye.UnsecureWLAN.views.browser.BrowserStrukt;
-import at.redeye.UnsecureWLAN.views.browser.Port80Handler;
-import at.redeye.UnsecureWLAN.views.lib.HTTPGet;
+import at.redeye.UnsecureWLAN.views.lib.PortHandler;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.TimerTask;
-import java.util.Vector;
 
 /**
  *
@@ -26,8 +24,8 @@ public class PasswordView extends BaseDialog {
 
     MainWin main_win;
     TableManipulator tm;
-    Port80Handler handler;
-    Vector<UsernameStrukt> connections = new Vector();
+    PortHandler handler;
+    ArrayList<UsernameStrukt> connections = new ArrayList();
     
     public PasswordView(Root root, MainWin main_win) {
         super(root, root.MlM("Browser"));
@@ -41,7 +39,7 @@ public class PasswordView extends BaseDialog {
         tm.hide(strukt.connection_id);
         tm.prepareTable();
         
-        handler = new Port80Handler();
+        handler = new PortHandler( 80, 20 );
         main_win.registerHandler( handler );
 
         getAutoRefreshTimer().schedule(new TimerTask() {

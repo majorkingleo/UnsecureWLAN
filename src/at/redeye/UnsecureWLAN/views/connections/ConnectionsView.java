@@ -9,10 +9,10 @@ import at.redeye.FrameWork.base.Root;
 import at.redeye.FrameWork.base.tablemanipulator.TableManipulator;
 import at.redeye.UnsecureWLAN.MainWin;
 import at.redeye.UnsecureWLAN.StreamEntryWithoutContent;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.TimerTask;
-import java.util.Vector;
 
 /**
  *
@@ -20,7 +20,7 @@ import java.util.Vector;
  */
 public class ConnectionsView extends BaseDialog {
 
-    Vector<ConnectionsStruct> connections = new Vector();
+    ArrayList<ConnectionsStruct> connections = new ArrayList();
     TableManipulator tm;
     MainWin main_win;
     ConnectionHandler handler;
